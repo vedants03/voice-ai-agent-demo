@@ -1,0 +1,16 @@
+# Secrets — NEVER commit
+.env.local
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Generated RAG index (regenerate with: python src/ingest.py)
+index/
+
+# Local artifacts / scratch
+*.log
+*.wav
+tmp_*.md
+.cache/

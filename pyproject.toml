@@ -1,0 +1,11 @@
+[project]
+name = "voice-ai-agent-demo"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastembed>=0.8.0",
+    "livekit-agents[silero,turn-detector]>=1.5.15",
+    "numpy>=2.4.6",
+    "pdfplumber>=0.11.9",
+    "python-dotenv>=1.2.2",
+]
