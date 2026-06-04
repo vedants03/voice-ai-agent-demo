@@ -19,10 +19,12 @@ from livekit.agents import (
     Agent,
     AgentSession,
     JobContext,
+    MetricsCollectedEvent,
     RoomInputOptions,
     WorkerOptions,
     cli,
     inference,
+    metrics,
 )
 from livekit.plugins import silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
@@ -104,7 +106,8 @@ class SalesAgent(Agent):
 
 
 def prewarm(proc) -> None:
-    proc.userdata["vad"] = silero.VAD.load(min_silence_duration=0.4)
+    # Latency: detect end-of-speech sooner (default 0.55s). Raise if it cuts callers off.
+    proc.userdata["vad"] = silero.VAD.load(min_silence_duration=0.3)
 
 
 async def entrypoint(ctx: JobContext) -> None:
@@ -112,13 +115,19 @@ async def entrypoint(ctx: JobContext) -> None:
 
     session = AgentSession(
         stt=inference.STT(model="deepgram/nova-3", language="multi"),  # Hindi+English
-        llm=inference.LLM(model="google/gemini-2.5-flash"),
+        # flash-lite: faster time-to-first-token than flash (latency); still multilingual.
+        llm=inference.LLM(model="google/gemini-2.5-flash-lite"),
         tts=inference.TTS(model="elevenlabs/eleven_flash_v2_5", voice=TTS_VOICE),
         vad=ctx.proc.userdata["vad"],
         turn_detection=MultilingualModel(),
-        preemptive_generation=True,
-        min_endpointing_delay=0.3,
+        preemptive_generation=True,  # generate during the endpointing wait
+        min_endpointing_delay=0.2,  # shorter post-speech wait (default 0.5s)
     )
+
+    # Per-turn latency breakdown (EOU delay, STT, LLM TTFT, TTS TTFB) -> logs.
+    @session.on("metrics_collected")
+    def _on_metrics(ev: MetricsCollectedEvent) -> None:
+        metrics.log_metrics(ev.metrics)
 
     await session.start(
         agent=SalesAgent(),
