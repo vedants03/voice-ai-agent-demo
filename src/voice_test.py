@@ -20,14 +20,14 @@ ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env.local")
 
 TEXT = (
-    "Hello, I'm Priya from Bharti AXA Life. I can help you with the Flexi Term Pro plan. "
-    "Namaste, main aapki kaise madad kar sakti hoon?"
+    "Hi, this is Omkar from Acme Growth Partners, an end-to-end marketing and sales partner. "
+    "Namaste, kya main aapka thoda sa time le sakta hoon?"
 )
 
-# Female voices confirmed available via LiveKit Inference (ElevenLabs default set).
+# Male voices to check via LiveKit Inference (ElevenLabs default set).
 CANDIDATES = {
-    "jessica": "cgSgspJ2msm6clMCkdW9",  # American female
-    "alice": "Xb7hH8MSUJpSbSDYk0k2",  # British female
+    "chris": "iP95p4xoKVk53GoZ742B",  # American male
+    "brian": "nPczCjzI2devNBz1zQrb",  # American male
 }
 
 

@@ -21,15 +21,16 @@ if hasattr(sys.stdout, "reconfigure"):
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env.local")
 
+# Simulated prospect turns to sanity-check the outbound sales agent's responses,
+# objection handling, redirect-to-booking, and bilingual mirroring (single-turn).
 QUESTIONS = [
-    "What is the minimum sum assured?",  # table
-    "What's the yearly premium for a 30 year old male for 1 crore cover, single life?",  # sample premium table
-    "What are the death benefit payout options?",
-    "Which riders can I add to this plan?",  # rider table
-    "What is the maximum age at maturity?",  # table
-    "इस प्लान में एंट्री के लिए न्यूनतम और अधिकतम उम्र क्या है?",  # entry age (Hindi, table)
-    "Ek 35 saal ke aadmi ke liye 1 crore ka premium kitna hai?",  # Hinglish, table
-    "Does this plan cover COVID hospitalization?",  # edge: hospi cash rider exists, COVID not named
+    "Sorry, who is this and what does your company do?",  # intro
+    "We already get our leads from LinkedIn, we're good.",  # objection / current state
+    "I'm pretty busy right now.",  # brush-off objection
+    "How exactly would you help us improve our lead generation?",  # discovery question
+    "Okay sure, let's do Friday at 3 PM.",  # booking -> should confirm verbally
+    "Aap log kya karte ho exactly?",  # Hinglish: what do you do
+    "हमें इसमें कोई दिलचस्पी नहीं है।",  # Hindi: not interested -> should be gracious
 ]
 
 
