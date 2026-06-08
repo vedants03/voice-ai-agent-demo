@@ -12,9 +12,11 @@ Script modeled on a reference sales call. Identity values below are placeholders
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+from google.genai import types
 from livekit.agents import (
     Agent,
     AgentSession,
@@ -26,11 +28,15 @@ from livekit.agents import (
     inference,
     metrics,
 )
-from livekit.plugins import silero
+from livekit.plugins import google, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env.local")
+
+# Vertex AI (Gemini) config — auth via GOOGLE_APPLICATION_CREDENTIALS (in .env.local).
+GCP_PROJECT = os.getenv("GCP_PROJECT", "salk-ai-app")
+GCP_LOCATION = os.getenv("GCP_LOCATION", "asia-south1")
 
 # --- Identity (placeholder / dummy values — edit to your real details) ---
 AGENT_NAME = "Omkar"
@@ -115,7 +121,16 @@ async def entrypoint(ctx: JobContext) -> None:
 
     session = AgentSession(
         stt=inference.STT(model="deepgram/nova-3", language="multi"),  # Hindi+English.
-        llm=inference.LLM(model="google/gemini-2.5-flash"),
+        # Gemini via Vertex AI in asia-south1 (close to India) with thinking DISABLED:
+        # measured TTFT ~400ms vs ~2000ms with thinking on. The cost was never the
+        # region/gateway — it was gemini-2.5-flash's hidden reasoning pass.
+        llm=google.LLM(
+            model="gemini-2.5-flash",
+            vertexai=True,
+            project=GCP_PROJECT,
+            location=GCP_LOCATION,
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
+        ),
         tts=inference.TTS(model="elevenlabs/eleven_flash_v2_5", voice=TTS_VOICE),
         vad=ctx.proc.userdata["vad"],
         turn_detection=MultilingualModel(),

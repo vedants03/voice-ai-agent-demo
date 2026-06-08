@@ -14,3 +14,8 @@ index/
 *.wav
 tmp_*.md
 .cache/
+
+# GCP service-account key — NEVER commit
+salk-ai-app-f0e7581921f7.json
+*service-account*.json
+gcp-*.json
