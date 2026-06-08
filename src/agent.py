@@ -23,10 +23,16 @@ from livekit.agents import (
     JobContext,
     MetricsCollectedEvent,
     RoomInputOptions,
+    TurnHandlingOptions,
     WorkerOptions,
     cli,
     inference,
     metrics,
+)
+from livekit.agents.voice.turn import (
+    EndpointingOptions,
+    InterruptionOptions,
+    PreemptiveGenerationOptions,
 )
 from livekit.plugins import google, silero
 
@@ -85,23 +91,23 @@ align with the sales process.
 - Default to **English**. If the prospect replies in **Hindi** or **Hinglish**, mirror their
   language naturally and continue in it. Switch whenever they switch.
 
-# Style (this is a live voice call)
-- Keep turns **short and natural — usually 1 to 2 sentences.** Don't monologue or info-dump.
+# Style (this is a live voice call — BE BRIEF)
+- **One short sentence per reply whenever possible. Never more than two. Stay under ~25 words.**
+- Ask **one** question at a time. Never info-dump, list all your services, or over-explain.
+  If there's more to say, give a one-line teaser and offer to go deeper ("...want me to explain how?").
+- Sound natural and human — use contractions and plain words, like a real person on a quick call.
 - Be **consultative and polite, never pushy** — respect their time; if they decline, be gracious.
 - Don't read markdown, lists, or symbols aloud. Say dates and times naturally ("Friday at 3 PM").
-- Speak any numbers naturally; read phone numbers digit by digit in the language you're speaking.
+- Read phone numbers digit by digit in the language you're speaking.
 - **Do not invent** pricing, guarantees, specific case-study numbers, or services beyond the list
   above — offer to cover specifics in the meeting.
-- Always keep steering, gently, toward booking the 15-minute meeting.
+- Always keep gently steering toward booking the 15-minute meeting.
 """
 
-OPENING = (
-    f"You are {AGENT_NAME} from {COMPANY} making an outbound call. Open in ENGLISH: warmly "
-    "confirm you're speaking with the right person, introduce yourself and the company in one "
-    "line (an end-to-end marketing and sales partner helping with cleaner contact data, lead "
-    "generation, appointment setting, SEO and paid ads), and ask your first discovery question "
-    "about whether their team faces challenges reaching the right decision-makers or with "
-    "lead-data quality. Keep it to two short sentences."
+# Fixed, crisp cold-call opener (spoken verbatim so it's always tight and natural).
+OPENING_LINE = (
+    f"Hi, this is {AGENT_NAME} from {COMPANY}. I'll keep this quick — we help B2B teams reach "
+    "the right decision-makers with cleaner lead data. Do you have a minute?"
 )
 
 
@@ -132,12 +138,21 @@ async def entrypoint(ctx: JobContext) -> None:
         ),
         tts=inference.TTS(model="elevenlabs/eleven_flash_v2_5", voice=TTS_VOICE),
         vad=ctx.proc.userdata["vad"],
-        # VAD-only endpointing: end-of-turn ≈ VAD silence (0.3s) + min_endpointing_delay
-        # (0.2s) ≈ 0.5s, vs ~1.25s with the semantic turn detector. Faster, but more
-        # likely to cut off a caller who pauses mid-sentence — raise the VAD silence if so.
-        turn_detection="vad",
-        preemptive_generation=True,  # generate during the endpointing wait
-        min_endpointing_delay=0.2,  # shorter post-speech wait (default 0.5s)
+        turn_handling=TurnHandlingOptions(
+            # VAD-only endpointing: end-of-turn ≈ VAD silence (0.3s) + min_delay (0.2s)
+            # ≈ 0.5s, vs ~1.25s with the semantic turn detector.
+            turn_detection="vad",
+            endpointing=EndpointingOptions(min_delay=0.2),
+            # Ignore short backchannels: require ≥3 words to interrupt, so 1-2 filler
+            # words ("uh-huh", "okay", "haan") won't cut the agent off. If a brief sound
+            # does pause it, resume automatically.
+            interruption=InterruptionOptions(
+                mode="adaptive",
+                min_words=3,
+                resume_false_interruption=True,
+            ),
+            preemptive_generation=PreemptiveGenerationOptions(enabled=True),
+        ),
     )
 
     # Per-turn latency breakdown (EOU delay, STT, LLM TTFT, TTS TTFB) -> logs.
@@ -151,7 +166,7 @@ async def entrypoint(ctx: JobContext) -> None:
         room_input_options=RoomInputOptions(),
     )
 
-    await session.generate_reply(instructions=OPENING)
+    await session.say(OPENING_LINE)
 
 
 if __name__ == "__main__":
