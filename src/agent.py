@@ -114,11 +114,7 @@ async def entrypoint(ctx: JobContext) -> None:
     await ctx.connect()
 
     session = AgentSession(
-        stt=inference.STT(model="deepgram/nova-3", language="multi"),  # Hindi+English
-        # Measured: TTFT here is network/gateway-bound, not model-bound — all models
-        # land ~1.1-1.5s from a local (India) machine. flash was fastest + best quality,
-        # so flash-lite gave no benefit. The real latency lever is co-locating the agent
-        # with the gateway (deploy to LiveKit Cloud) rather than running dev locally.
+        stt=inference.STT(model="deepgram/nova-3", language="multi"),  # Hindi+English.
         llm=inference.LLM(model="google/gemini-2.5-flash"),
         tts=inference.TTS(model="elevenlabs/eleven_flash_v2_5", voice=TTS_VOICE),
         vad=ctx.proc.userdata["vad"],

@@ -1,0 +1,13 @@
+.venv/
+.git/
+.github/
+__pycache__/
+*.pyc
+# Secrets are injected by LiveKit Cloud — never bake them into the image
+.env.local
+.env
+# Not used by the sales agent; keeps the image small
+index/
+*.wav
+*.log
+*.mp3
