@@ -139,16 +139,11 @@ async def entrypoint(ctx: JobContext) -> None:
         tts=inference.TTS(model="elevenlabs/eleven_flash_v2_5", voice=TTS_VOICE),
         vad=ctx.proc.userdata["vad"],
         turn_handling=TurnHandlingOptions(
-            # VAD-only endpointing: end-of-turn ≈ VAD silence (0.3s) + min_delay (0.2s)
-            # ≈ 0.5s, vs ~1.25s with the semantic turn detector.
             turn_detection="vad",
             endpointing=EndpointingOptions(min_delay=0.2),
-            # Ignore short backchannels: require ≥3 words to interrupt, so 1-2 filler
-            # words ("uh-huh", "okay", "haan") won't cut the agent off. If a brief sound
-            # does pause it, resume automatically.
             interruption=InterruptionOptions(
                 mode="adaptive",
-                min_words=3,
+                min_words=2,
                 resume_false_interruption=True,
             ),
             preemptive_generation=PreemptiveGenerationOptions(enabled=True),
