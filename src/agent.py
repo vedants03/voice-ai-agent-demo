@@ -29,7 +29,6 @@ from livekit.agents import (
     metrics,
 )
 from livekit.plugins import google, silero
-from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env.local")
@@ -133,7 +132,10 @@ async def entrypoint(ctx: JobContext) -> None:
         ),
         tts=inference.TTS(model="elevenlabs/eleven_flash_v2_5", voice=TTS_VOICE),
         vad=ctx.proc.userdata["vad"],
-        turn_detection=MultilingualModel(),
+        # VAD-only endpointing: end-of-turn ≈ VAD silence (0.3s) + min_endpointing_delay
+        # (0.2s) ≈ 0.5s, vs ~1.25s with the semantic turn detector. Faster, but more
+        # likely to cut off a caller who pauses mid-sentence — raise the VAD silence if so.
+        turn_detection="vad",
         preemptive_generation=True,  # generate during the endpointing wait
         min_endpointing_delay=0.2,  # shorter post-speech wait (default 0.5s)
     )
