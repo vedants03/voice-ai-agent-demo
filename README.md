@@ -7,29 +7,13 @@ does. Demoed in the **LiveKit Agents Playground** (no telephony).
 
 ## Stack
 
-| Stage | Model / Service | Notes |
-|-------|-----------------|-------|
-| **STT** | Deepgram Nova-3 (multilingual) via LiveKit Inference | Hindi + English + Hinglish |
-| **LLM** | Google Gemini 2.5 Flash on Vertex AI (`asia-south1`) | "thinking" disabled for low latency |
-| **TTS** | ElevenLabs Flash v2.5 (multilingual) via LiveKit Inference | streaming |
-| **Turn-taking** | Silero VAD + VAD-based endpointing | low latency; ignores short filler words |
-| **Orchestration** | LiveKit Agents | per-turn latency metrics |
-
-## Latency
-
-Per-turn latency is instrumented (end-of-utterance, STT, LLM TTFT, TTS TTFB) and logged. Key
-optimizations, in order of impact:
-
-- **Disabled the LLM's "thinking" pass** — cut first-token time ~3× (≈2,000ms → ≈400ms).
-- **Region-local LLM** — Gemini on Vertex AI in-region instead of a distant gateway.
-- **VAD-based turn detection** — end-of-turn ≈ 0.5s vs ~1.25s with a semantic detector.
-- **Preemptive generation** — the LLM starts generating during the endpointing wait.
-
-## Conversation behavior
-
-- English-first; mirrors the prospect into Hindi/Hinglish when they switch.
-- Short, natural turns (one to two sentences) — tuned against over-explaining.
-- Short filler words / backchannels ("uh-huh", "okay", "haan") don't interrupt the agent.
+| Stage | Model / Service |
+|-------|-----------------|
+| **STT** | Deepgram Nova-3 (multilingual) via LiveKit Inference |
+| **LLM** | Google Gemini 2.5 Flash on Vertex AI (`asia-south1`) |
+| **TTS** | ElevenLabs Flash v2.5 (multilingual) via LiveKit Inference |
+| **Turn-taking** | Silero VAD |
+| **Orchestration** | LiveKit Agents |
 
 ## Setup
 
@@ -61,22 +45,17 @@ Wait for `registered worker`, then open **https://agents-playground.livekit.io**
 your project, and talk to the agent. Stop with **Ctrl+C** (graceful) so worker subprocesses
 exit cleanly.
 
-## Caveats / trade-offs
+## Caveats
 
-- **LLM** runs on Vertex AI (needs a GCP service account); "thinking" is disabled for speed,
-  trading deep multi-step reasoning — not needed for this conversational task.
-- **STT & TTS** run via LiveKit Inference (US-hosted), adding ~0.3–0.5s each; region-local
-  services would reduce latency further.
-- **Voice** is an ElevenLabs default voice (single accent); LiveKit Inference doesn't expose
-  custom/community voices. It speaks Hindi but with that voice's accent.
-- **Turn-taking** is VAD-based for low latency, so it may occasionally clip a caller who pauses
-  mid-sentence (tunable via VAD silence + interruption settings).
+- **LLM** runs on Vertex AI and requires a Google Cloud service account with Vertex AI access.
+- **STT & TTS** run via LiveKit Inference (US-hosted), which adds network latency from other regions.
+- **Voice** is an ElevenLabs default voice (single accent); it speaks Hindi with that voice's accent.
 - **Demo scope:** placeholder identity, verbal meeting booking (no live calendar), free-tier credits.
 
 ## Optional: deploy to LiveKit Cloud
 
-A `Dockerfile` is included to run the agent as a managed LiveKit Cloud agent (`lk agent create`),
-co-located with the gateway. Secrets are injected by the platform at runtime.
+A `Dockerfile` is included to run the agent as a managed LiveKit Cloud agent (`lk agent create`).
+Secrets are injected by the platform at runtime.
 
 ## Project structure
 
