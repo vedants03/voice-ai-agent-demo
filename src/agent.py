@@ -40,14 +40,14 @@ ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env.local")
 
 # Vertex AI (Gemini) config — auth via GOOGLE_APPLICATION_CREDENTIALS (in .env.local).
-GCP_PROJECT = os.getenv("GCP_PROJECT", "salk-ai-app")
+GCP_PROJECT = os.getenv("GCP_PROJECT")
 GCP_LOCATION = os.getenv("GCP_LOCATION", "asia-south1")
 
 # --- Identity (placeholder / dummy values — edit to your real details) ---
 AGENT_NAME = "Omkar"
 COMPANY = "Acme Growth Partners"  # placeholder company name
 
-# Male voice for "Omkar" via LiveKit Inference (ElevenLabs default set).
+# Male voice for via LiveKit Inference (ElevenLabs default set).
 # Chris (American male). Alt male: Brian = nPczCjzI2devNBz1zQrb.
 # eleven_flash_v2_5 is multilingual, so the voice also speaks Hindi.
 TTS_VOICE = "iP95p4xoKVk53GoZ742B"  # Chris
