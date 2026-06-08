@@ -10,6 +10,7 @@ import sys
 import wave
 from pathlib import Path
 
+import aiohttp
 from dotenv import load_dotenv
 from livekit.agents import inference
 
@@ -31,9 +32,11 @@ CANDIDATES = {
 }
 
 
-async def synth(name: str, voice_id: str) -> None:
+async def synth(name: str, voice_id: str, session: aiohttp.ClientSession) -> None:
     out = ROOT / f"voice_sample_{name}.wav"
-    tts = inference.TTS(model="elevenlabs/eleven_flash_v2_5", voice=voice_id)
+    tts = inference.TTS(
+        model="elevenlabs/eleven_flash_v2_5", voice=voice_id, http_session=session
+    )
     frames = []
     try:
         async with tts.synthesize(TEXT) as stream:
@@ -57,10 +60,11 @@ async def synth(name: str, voice_id: str) -> None:
 
 
 async def main() -> None:
-    print("Generating female-voice samples (English + Hindi):")
-    for name, vid in CANDIDATES.items():
-        await synth(name, vid)
-    print("\nPlay the .wav files and tell me which voice you prefer for Priya.")
+    print("Generating male-voice samples (English + Hindi):")
+    async with aiohttp.ClientSession() as session:
+        for name, vid in CANDIDATES.items():
+            await synth(name, vid, session)
+    print("\nPlay the .wav files and tell me which voice you prefer for Omkar.")
 
 
 if __name__ == "__main__":
